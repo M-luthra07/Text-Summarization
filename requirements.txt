@@ -1,7 +1,0 @@
-fastapi
-uvicorn[standard]
-torch
-transformers
-sentencepiece
-jinja2
-safetensors

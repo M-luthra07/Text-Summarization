@@ -61,20 +61,6 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser. Keep the te
 
 For CUDA-enabled PyTorch, use the install command recommended by the [official PyTorch installation selector](https://pytorch.org/get-started/locally/) for your operating system and CUDA version.
 
-## Deploy to Render
-
-Deploy this project as a Render **Web Service** (not a Static Site), because FastAPI loads the model and serves both the page and API.
-
-1. Push the project to GitHub, including `requirements.txt`, `.gitattributes`, and the `saved_model_summary/` model files. Confirm `git lfs ls-files` lists `saved_model_summary/model.safetensors`.
-2. In the Render Dashboard, select **New > Web Service** and connect the GitHub repository.
-3. Use the repository root as the root directory, choose the Python runtime, and set:
-   - **Build command:** `pip install -r requirements.txt`
-   - **Start command:** `uvicorn app:app --host 0.0.0.0 --port $PORT`
-4. Choose an instance with enough memory for the model and inference. The checkpoint alone is about 990 MB; the running model needs additional memory. Render's 512 MB free web service is not sufficient. Check current Render instance plans and choose one with several GB of RAM.
-5. Create the service and check its deploy logs. When it is live, open the `onrender.com` URL. The interactive UI is at `/`, and API docs are at `/docs`.
-
-The checkpoint uses Git LFS, so make sure the GitHub LFS quota allows Render to download it during deployment. If the build or startup reports missing or invalid model files, verify that the LFS files were pushed and that the deployed checkout contains the actual model files, not LFS pointer text. Keep in mind that free services can spin down when idle; model loading may make the first request after a spin-down slow.
-
 ## API
 
 ### `POST /summarize/`
