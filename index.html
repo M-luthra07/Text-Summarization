@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10100f">
+  <title>Cleartext — A closer read</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --page: #10100f;
+      --panel: #151514;
+      --panel-raised: #1c1b19;
+      --line: #34322e;
+      --text: #f1eee7;
+      --muted: #aaa59b;
+      --subtle: #817b71;
+      --accent: #d5a46f;
+      --danger: #e5a39a;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--page);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    button, textarea { font: inherit; }
+    button { color: inherit; }
+
+    .shell { width: min(1000px, calc(100% - 48px)); margin: 0 auto; }
+
+    header {
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 700; letter-spacing: .01em; }
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 3px;
+      background: var(--accent);
+      color: #111;
+      font-family: Georgia, serif;
+      font-size: 16px;
+      font-weight: 900;
+    }
+    .header-note { color: var(--muted); font-size: 13px; }
+
+    main { padding: 68px 0 72px; }
+    .intro { max-width: 680px; margin-bottom: 38px; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 20px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .04em;
+    }
+    .eyebrow::before { width: 20px; height: 1px; background: var(--accent); content: ""; }
+    h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(42px, 6.5vw, 68px); font-weight: 400; line-height: 1.02; letter-spacing: -.045em; }
+    .intro-copy { max-width: 520px; margin: 17px 0 0; color: var(--muted); font-size: 16px; }
+
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 18px; align-items: stretch; }
+    .card { min-width: 0; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+    .input-card { padding: 23px; }
+    .card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    h2 { margin: 0; font-size: 16px; letter-spacing: -.02em; }
+    .card-description { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+    .step { color: var(--subtle); font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 245px;
+      margin: 22px 0 12px;
+      padding: 15px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      outline: none;
+      background: #0d0d0f;
+      color: var(--text);
+      line-height: 1.6;
+      transition: border-color .18s;
+    }
+    textarea::placeholder { color: #6f6f77; }
+    textarea:focus { border-color: var(--accent); }
+    .input-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--subtle); font-size: 12px; }
+
+    .primary-button {
+      width: 100%;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      margin-top: 20px;
+      border: 0;
+      border-radius: 3px;
+      background: #e9e4da;
+      color: #171614;
+      cursor: pointer;
+      font-weight: 650;
+      transition: background .18s, opacity .18s;
+    }
+    .primary-button:hover:not(:disabled) { background: #fffaf0; }
+    .primary-button:disabled { cursor: wait; opacity: .65; }
+    .button-arrow { font-size: 19px; line-height: 1; }
+
+    .results-card { padding: 23px; display: flex; flex-direction: column; }
+    .results-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .result-status {
+      padding: 4px 9px;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 650;
+    }
+    .result-status.ready { border-color: #67503a; background: #211b15; color: var(--accent); }
+    .result-block { padding: 19px 0; border-bottom: 1px solid var(--line); }
+    .result-block:last-of-type { border-bottom: 0; }
+    .result-label { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; color: var(--accent); font-size: 12px; font-weight: 600; }
+    .result-icon { display: none; }
+    .result-text { margin: 0; color: var(--text); font-family: Georgia, "Times New Roman", serif; font-size: 17px; line-height: 1.55; overflow-wrap: anywhere; }
+    .empty-state {
+      flex: 1;
+      min-height: 230px;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      padding: 24px 18px;
+      text-align: center;
+    }
+    .empty-icon {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 15px;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      background: var(--panel-raised);
+      color: var(--muted);
+      font-size: 21px;
+    }
+    .empty-state h3 { margin: 0; font-size: 15px; }
+    .empty-state p { max-width: 270px; margin: 7px 0 0; color: var(--muted); font-size: 13px; }
+    .error-message { margin: auto 0; padding: 14px; border: 1px solid #593431; border-radius: 9px; background: #211312; color: var(--danger); font-size: 13px; }
+
+    .how-it-works { margin-top: 58px; }
+    .section-heading { margin-bottom: 19px; }
+    .section-heading h2 { font-size: 19px; }
+    .section-heading p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
+    .step-card { min-height: 112px; padding: 17px 20px 10px 0; }
+    .step-number { color: var(--accent); font-family: Georgia, "Times New Roman", serif; font-size: 14px; }
+    .step-card h3 { margin: 10px 0 4px; font-size: 14px; font-weight: 600; }
+    .step-card p { max-width: 270px; margin: 0; color: var(--muted); font-size: 12px; }
+
+    footer { padding: 22px 0; border-top: 1px solid var(--line); color: var(--subtle); font-size: 12px; }
+    .footer-content { display: flex; justify-content: space-between; gap: 20px; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+    @media (max-width: 720px) {
+      .shell { width: min(100% - 32px, 540px); }
+      header { height: 62px; }
+      .header-note { font-size: 11px; }
+      main { padding: 52px 0 58px; }
+      .intro { margin-bottom: 30px; }
+      .intro-copy { font-size: 15px; }
+      .workspace { grid-template-columns: 1fr; }
+      .input-card, .results-card { padding: 19px; }
+      textarea { min-height: 200px; }
+      .steps { grid-template-columns: 1fr; }
+      .step-card { min-height: 0; padding: 14px 0; border-bottom: 1px solid var(--line); }
+      .step-card h3 { margin-top: 10px; }
+      .how-it-works { margin-top: 48px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand"><span class="brand-mark" aria-hidden="true">C</span><span>cleartext</span></div>
+      <span class="header-note">Website content, made clear.</span>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">A closer read</p>
+        <h1>What is this page<br>actually saying?</h1>
+        <p class="intro-copy">Paste in text from a website. Get a short summary and a plain sentence about what the page is for.</p>
+      </section>
+
+      <section class="workspace" aria-label="Website text analyzer">
+        <form class="card input-card" id="analyze-form">
+          <div class="card-heading">
+            <div>
+              <h2>Page text</h2>
+              <p class="card-description">Paste the part you want to make sense of.</p>
+            </div>
+            <span class="step">YOUR TEXT</span>
+          </div>
+          <label class="visually-hidden" for="website-text">Website text to summarize</label>
+          <textarea id="website-text" name="dialogue" placeholder="Paste an about page, product description, or article..." required></textarea>
+          <div class="input-meta">
+            <span>Text is sent to the summarizer running with this app.</span>
+            <span id="character-count" aria-live="polite">0 characters</span>
+          </div>
+          <button class="primary-button" id="analyze-button" type="submit">
+            <span id="button-label">Get the gist</span>
+          </button>
+        </form>
+
+        <section class="card results-card" aria-labelledby="results-heading" aria-live="polite">
+          <div class="results-title">
+            <h2 id="results-heading">Your results</h2>
+            <span class="result-status" id="result-status">No text yet</span>
+          </div>
+          <div class="empty-state" id="empty-state">
+            <div class="empty-icon" aria-hidden="true">“ ”</div>
+            <h3>The useful bit, without the digging</h3>
+            <p>Your page’s purpose and main point will show up here.</p>
+          </div>
+          <div id="result-content" hidden>
+            <div class="result-block">
+              <div class="result-label"><span class="result-icon" aria-hidden="true">↗</span> What it’s for</div>
+              <p class="result-text" id="intent-result"></p>
+            </div>
+            <div class="result-block">
+              <div class="result-label"><span class="result-icon" aria-hidden="true">≡</span> In brief</div>
+              <p class="result-text" id="summary-result"></p>
+            </div>
+          </div>
+          <p class="error-message" id="error-message" role="alert" hidden></p>
+        </section>
+      </section>
+
+      <section class="how-it-works" aria-labelledby="how-heading">
+        <div class="section-heading">
+          <h2 id="how-heading">How it works</h2>
+          <p>Three simple steps, then the page makes more sense.</p>
+        </div>
+        <div class="steps">
+          <article class="step-card">
+            <span class="step-number">01</span>
+            <h3>Copy some text</h3>
+            <p>An about page, product description, or article will do.</p>
+          </article>
+          <article class="step-card">
+            <span class="step-number">02</span>
+            <h3>See what it’s for</h3>
+            <p>Get the page’s main purpose in one sentence.</p>
+          </article>
+          <article class="step-card">
+            <span class="step-number">03</span>
+            <h3>Read the short version</h3>
+            <p>Get the main points without working through every paragraph.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-content">
+        <span>Cleartext · A straightforward reading aid.</span>
+        <span>Made for making sense of web pages.</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const form = document.getElementById("analyze-form");
+    const textInput = document.getElementById("website-text");
+    const characterCount = document.getElementById("character-count");
+    const analyzeButton = document.getElementById("analyze-button");
+    const buttonLabel = document.getElementById("button-label");
+    const resultStatus = document.getElementById("result-status");
+    const emptyState = document.getElementById("empty-state");
+    const resultContent = document.getElementById("result-content");
+    const errorMessage = document.getElementById("error-message");
+
+    textInput.addEventListener("input", () => {
+      const count = textInput.value.length;
+      characterCount.textContent = `${count.toLocaleString()} ${count === 1 ? "character" : "characters"}`;
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const dialogue = textInput.value.trim();
+      if (!dialogue) {
+        textInput.focus();
+        return;
+      }
+
+      analyzeButton.disabled = true;
+      buttonLabel.textContent = "Reading...";
+      resultStatus.textContent = "Analyzing";
+      resultStatus.classList.remove("ready");
+      errorMessage.hidden = true;
+      resultContent.hidden = true;
+      emptyState.hidden = false;
+      emptyState.querySelector("h3").textContent = "Reading the page text";
+      emptyState.querySelector("p").textContent = "Putting the main point into a few words...";
+
+      try {
+        const response = await fetch("/summarize/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dialogue })
+        });
+        if (!response.ok) {
+          throw new Error(`The analysis request failed (${response.status}). Please try again.`);
+        }
+
+        const data = await response.json();
+        if (typeof data.intent !== "string" || typeof data.summary !== "string") {
+          throw new Error("The server response did not include an intent and summary.");
+        }
+
+        document.getElementById("intent-result").textContent = data.intent;
+        document.getElementById("summary-result").textContent = data.summary.trim();
+        emptyState.hidden = true;
+        resultContent.hidden = false;
+        resultStatus.textContent = "Done";
+        resultStatus.classList.add("ready");
+      } catch (error) {
+        emptyState.hidden = true;
+        errorMessage.textContent = error instanceof TypeError
+          ? "Could not connect to the summarizer. Make sure the FastAPI app is running and try again."
+          : error.message;
+        errorMessage.hidden = false;
+        resultStatus.textContent = "Could not analyze";
+      } finally {
+        analyzeButton.disabled = false;
+        buttonLabel.textContent = "Get the gist";
+      }
+    });
+  </script>
+</body>
+</html>
