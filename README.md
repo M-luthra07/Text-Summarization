@@ -104,6 +104,8 @@ git add .gitattributes saved_model_summary/model.safetensors
 
 Git LFS has storage and bandwidth quotas. Alternatively, keep the checkpoint outside the repository and provide instructions for obtaining it. Do not upload a model unless you have the rights to distribute it.
 
+DEMO LINK: https://youtu.be/MQI59QYcgH4 
+
 ## Notes
 
 - The model loads when the FastAPI application starts. If files are missing or incompatible, startup will fail.
